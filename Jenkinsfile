@@ -155,28 +155,6 @@ pipeline {
                 }
             }
         }
-
-        stage('Export Docker Image') {
-            steps {
-                script {
-                    def versionFolder = "/home/jenkins/workspace/tb-CyberSIO/Frontend"
-                    def services = ["shared-lib","root-config","root-container","tb-cybersio-ui","tb-thirdParty-ui","tb-rbac"]
-        
-                    for (svc in services) {
-                        def imageName = "cybersio/${svc.toLowerCase()}:${params.VERSION}"
-                        def tarFile = "${versionFolder}/${svc.toLowerCase()}-${params.VERSION}.tar.gz"
-        
-                        sh """
-                            if docker image inspect ${imageName} > /dev/null 2>&1; then
-                                docker save ${imageName} | gzip > ${tarFile}
-                            else
-                                echo "Image not found: ${imageName}"
-                            fi
-                        """
-                    }
-                }
-            }
-        }
     }
 
     post {
