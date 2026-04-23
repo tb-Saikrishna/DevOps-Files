@@ -71,7 +71,7 @@ pipeline {
         stage('Artifact Generation') {
             steps {
                 script {
-                    def versionFolder = "/home/jenkins/workspace/tb-CyberSIO/base-microfrontend-${params.VERSION}"
+                    def versionFolder = "/home/jenkins/workspace/tb-CyberSIO/Frontend"
                     def services = ["shared-lib","root-config","root-container","tb-cybersio-ui","tb-thirdParty-ui","tb-rbac"]
 
                     sh """
@@ -111,7 +111,7 @@ pipeline {
         stage('Certificates Generation') {
             steps {
                 script {
-                    def versionFolder = "/home/jenkins/workspace/tb-CyberSIO/base-microfrontend-${params.VERSION}"
+                    def versionFolder = "/home/jenkins/workspace/tb-CyberSIO/Frontend"
                     def services = ["shared-lib","root-config","root-container","tb-cybersio-ui","tb-thirdParty-ui","tb-rbac"]
 
                     sh """
@@ -144,7 +144,7 @@ pipeline {
         stage('Docker Build') {
             steps {
                 script {
-                    def versionFolder = "/home/jenkins/workspace/tb-CyberSIO/base-microfrontend-${params.VERSION}"
+                    def versionFolder = "/home/jenkins/workspace/tb-CyberSIO/Frontend"
 
                     sh """
                         cd ${versionFolder}
@@ -159,7 +159,7 @@ pipeline {
         stage('Export Docker Image') {
             steps {
                 script {
-                    def versionFolder = "/home/jenkins/workspace/tb-CyberSIO/base-microfrontend-${params.VERSION}"
+                    def versionFolder = "/home/jenkins/workspace/tb-CyberSIO/Frontend"
                     def services = ["shared-lib","root-config","root-container","tb-cybersio-ui","tb-thirdParty-ui","tb-rbac"]
         
                     for (svc in services) {
