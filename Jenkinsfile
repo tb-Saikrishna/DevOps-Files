@@ -1,5 +1,5 @@
 def buildFrontendService(serviceName) {
-    dir("frontend/${serviceName}") {
+    dir("Frontend/${serviceName}") {
         sh '''
             set -e
 
@@ -17,7 +17,7 @@ def buildFrontendService(serviceName) {
 }
 
 def buildBackendService(serviceName, useExtraPackages = false) {
-    dir("backend/${serviceName}") {
+    dir("Backend/${serviceName}") {
         sh """
             set -e
             npm ci --legacy-peer-deps --no-audit --no-fund
