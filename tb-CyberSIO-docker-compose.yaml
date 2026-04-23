@@ -1,99 +1,99 @@
 services:
   root-config:
-    image: cybersio/root-config:${VERSION}
+    image: cybersio/root-config:4.1.2
     build:
       context: ../root-config
     environment:
       - PORT=9000
       - NODE_ENV=production
-      - HOST_IP=${CYB_MF_HOST_IP}
+      - HOST_IP=192.168.0.127
     network_mode: host
     restart: unless-stopped
     volumes:
       - ./logs/root-config:/var/log/nginx
 
   container-cybersio:
-    image: cybersio/root-container:${VERSION}
+    image: cybersio/root-container:4.1.2
     build:
       context: ../root-container
     environment:
       - PORT=9001
       - NODE_ENV=production
-      - HOST_IP=${CYB_MF_HOST_IP}
+      - HOST_IP=192.168.0.127
     network_mode: host
     restart: unless-stopped
     volumes:
       - ./logs/root-container:/var/log/nginx
 
   shared-lib:
-    image: cybersio/shared-lib:${VERSION}
+    image: cybersio/shared-lib:4.1.2
     build:
       context: ../shared-lib
     environment:
       - PORT=9002
       - NODE_ENV=production
-      - HOST_IP=${CYB_MF_HOST_IP}
+      - HOST_IP=192.168.0.127
     network_mode: host
     restart: unless-stopped
     volumes:
       - ./logs/shared-lib:/var/log/nginx
 
   tb-cybersio-ui:
-    image: cybersio/tb-cybersio-ui:${VERSION}
+    image: cybersio/tb-cybersio-ui:4.1.2
     build:
       context: ../tb-cybersio-ui
     environment:
       - PORT=9004
       - NODE_ENV=production
-      - HOST_IP=${CYB_MF_HOST_IP}
+      - HOST_IP=192.168.0.127
     network_mode: host
     restart: unless-stopped
     volumes:
       - ./logs/tb-cybersio-ui:/var/log/nginx
 
   tb-thirdparty-ui:
-    image: cybersio/tb-thirdparty-ui:${VERSION}
+    image: cybersio/tb-thirdparty-ui:4.1.2
     build:
       context: ../tb-thirdParty-ui
     environment:
       - PORT=9005
       - NODE_ENV=production
-      - HOST_IP=${CYB_MF_HOST_IP}
+      - HOST_IP=192.168.0.127
     network_mode: host
     restart: unless-stopped
     volumes:
       - ./logs/tb-thirdparty-ui:/var/log/nginx
 
   tb-rbac:
-    image: cybersio/tb-rbac:${VERSION}
+    image: cybersio/tb-rbac:4.1.2
     build:
       context: ../tb-rbac
     environment:
       - PORT=9003
       - NODE_ENV=production
-      - HOST_IP=${CYB_MF_HOST_IP}
+      - HOST_IP=192.168.0.127
     network_mode: host
     restart: unless-stopped
     volumes:
       - ./logs/tb-rbac:/var/log/nginx
  
   dist-api-gateway:
-    image: cybersio/dist-api-gateway:${VERSION}
+    image: cybersio/dist-api-gateway:4.1.2
     build:
       context: .
     environment:
       PORT: 9007
       NODE_ENV: development
-      PGUSER: ${PGUSER}
-      PGHOST: ${PGHOST}
-      PGPASSWORD: ${PGPASSWORD}
-      PGDATABASE: ${PGDATABASE}
-      PGPORT: ${PGPORT}
-      IAM_BASE_URL: ${IAM_BASE_URL}
-      IAM_REALM: ${IAM_REALM}
-      IAM_CLIENT_ID: ${IAM_CLIENT_ID}
-      IAM_CLIENT_SECRET: ${IAM_CLIENT_SECRET}
-      IAM_REDIRECT_URI: ${IAM_REDIRECT_URI}
+      PGUSER: apidb
+      PGHOST: "192.168.0.154"
+      PGPASSWORD: apidb
+      PGDATABASE: apidb
+      PGPORT: 5432
+      IAM_BASE_URL: https://tbiam.tech-bridge.biz:8444
+      IAM_REALM: AD
+      IAM_CLIENT_ID: tbpam
+      IAM_CLIENT_SECRET: Ld0kGDJXJZu7OqCE7le4zhCTagRq6KEv
+      IAM_REDIRECT_URI: https://192.168.0.81:9000/auth/callback
       GATEWAY_NAME: cybersio-api-gateway
       GATEWAY_VERSION: 1.0.0
       RATE_LIMIT_WINDOW_MS: 900000
@@ -102,14 +102,14 @@ services:
       LOG_FILE: logs/gateway.log
       CACHE_TTL: 300
       CACHE_MAX_SIZE: 1000
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
-      RBAC_SERVICE_URL: ${RBAC_SERVICE_URL}
-      TBSIEM_SERVICE_URL: ${TBSIEM_SERVICE_URL}
-      TBIAM_SERVICE_URL: ${TBIAM_SERVICE_URL}
-      TBUEBA_SERVICE_URL: ${TBUEBA_SERVICE_URL}
-      SYSLOG_SERVICE_URL: ${SYSLOG_SERVICE_URL}
-      TBPATCH_SERVICE_URL: ${TBPATCH_SERVICE_URL}
-      TBVA_SERVICE_URL: ${TBVA_SERVICE_URL}
+      ALLOWED_ORIGINS: http://localhost:*,http://localhost:3000,http://localhost:3002,http://192.168.0.19:8084,http://192.168.0.19:3002,https://192.168.0.26:9000,http://localhost:9000,https://192.168.0.81:9000
+      RBAC_SERVICE_URL: https://192.168.0.23:9006
+      TBSIEM_SERVICE_URL: https://192.168.0.20:5001
+      TBIAM_SERVICE_URL: https://192.168.0.34:9001
+      TBUEBA_SERVICE_URL: https://192.168.0.20:1443
+      SYSLOG_SERVICE_URL: https://192.168.0.20:5104
+      TBPATCH_SERVICE_URL: https://192.168.0.19:8084
+      TBVA_SERVICE_URL: https://192.168.0.33:5000/api/v1
       HEALTH_CHECK_INTERVAL: 30000
       HEALTH_CHECK_TIMEOUT: 5000
       CIRCUIT_BREAKER_THRESHOLD: 5
@@ -123,67 +123,67 @@ services:
       HTTPS_CERT: /opt/certificate.pem
       HTTPS_KEY: /opt/key.pem
       LICENSE_HMAC_SECRET: your_super_secret_key_here
-      TBSIEM_PRODUCT_ID: ${TBSIEM_PRODUCT_ID}
-      TBPAM_PRODUCT_ID: ${TBPAM_PRODUCT_ID}
-      TBIAM_PRODUCT_ID: ${TBIAM_PRODUCT_ID}
-      TBUEBA_PRODUCT_ID: ${TBUEBA_PRODUCT_ID}
-      TBSYSLOG_PRODUCT_ID: ${TBSYSLOG_PRODUCT_ID}
-      HOST_IP: ${CYB_MS_HOST_IP}
-      SMTP_LOCAL_SERVER: ${SMTP_LOCAL_SERVER}
-      SMTP_SERVICE: ${SMTP_SERVICE}
-      SMTP_SERVICE_PORT: ${SMTP_SERVICE_PORT}
-      SMTP_SENDER_NAME: ${SMTP_SENDER_NAME}
-      SMTP_PASSWORD: ${SMTP_PASSWORD}
-      SMTP_ALERT_SENDER_EMAIL: ${SMTP_ALERT_SENDER_EMAIL}
-      ALERT_RECIPIENT_EMAIL: ${ALERT_RECIPIENT_EMAIL}
-      TBSIEM_INDEXER: ${TBSIEM_INDEXER}
-      USERNAME_SIEM: ${USERNAME_SIEM}
-      PASSWORD_SIEM: ${PASSWORD_SIEM}
-      SIEM_RULE_LEVEL: ${SIEM_RULE_LEVEL}
-      SIEM_NOTIFICATION_INTERVAL: ${SIEM_NOTIFICATION_INTERVAL}
-      EMAIL_UEBA_ENABLED: ${EMAIL_UEBA_ENABLED}
-      EMAIL_SIEM_ENABLED: ${EMAIL_SIEM_ENABLED}
-      NAME: ${NAME}
-      TBITSM_UEBA_INTEGRATION: ${TBITSM_UEBA_INTEGRATION}
-      TBITSM_SIEM_INTEGRATION: ${TBITSM_SIEM_INTEGRATION}
-      ITSM_BASE_URL: ${ITSM_BASE_URL}
-      TBITSM_USERNAME: ${TBITSM_USERNAME}
-      TBITSM_PASSWORD: ${TBITSM_PASSWORD}
-      TBITSM_ORG_ID: ${TBITSM_ORG_ID}
-      TBITSM_CALLER_ID: ${TBITSM_CALLER_ID}
-      TBITSM_SERVICE_ID: ${TBITSM_SERVICE_ID}
-      TBITSM_SERVICESUBCATEGORY_ID: ${TBITSM_SERVICESUBCATEGORY_ID}
-      TBITSM_FUNCTIONALCI_ID: ${TBITSM_FUNCTIONALCI_ID}
-      CYBERSIO_VERSION: v${CYBERSIO_VERSION}
+      TBSIEM_PRODUCT_ID: 1
+      TBPAM_PRODUCT_ID: 9
+      TBIAM_PRODUCT_ID: 6
+      TBUEBA_PRODUCT_ID: 3
+      TBSYSLOG_PRODUCT_ID: 2
+      HOST_IP: 192.168.0.127
+      SMTP_LOCAL_SERVER: false
+      SMTP_SERVICE: smtp.office365.com
+      SMTP_SERVICE_PORT: 587
+      SMTP_SENDER_NAME: Techbridge
+      SMTP_PASSWORD: yxhqndzxsnmzbcjn
+      SMTP_ALERT_SENDER_EMAIL: support.tkt@tech-bridge.biz
+      ALERT_RECIPIENT_EMAIL: himanshu.verma@tech-bridge.biz
+      TBSIEM_INDEXER: https://192.168.0.191:9200/
+      USERNAME_SIEM: admin
+      PASSWORD_SIEM: admin
+      SIEM_RULE_LEVEL: 12
+      SIEM_NOTIFICATION_INTERVAL: 60000
+      EMAIL_UEBA_ENABLED: false
+      EMAIL_SIEM_ENABLED: true
+      NAME: Techbridge
+      TBITSM_UEBA_INTEGRATION: false
+      TBITSM_SIEM_INTEGRATION: false
+      ITSM_BASE_URL: https://192.168.3.160
+      TBITSM_USERNAME: admin
+      TBITSM_PASSWORD: Admin@123#
+      TBITSM_ORG_ID: 1
+      TBITSM_CALLER_ID: 
+      TBITSM_SERVICE_ID: 1
+      TBITSM_SERVICESUBCATEGORY_ID: 2
+      TBITSM_FUNCTIONALCI_ID: ADC
+      CYBERSIO_VERSION: v4.1.2
     network_mode: host
     restart: unless-stopped
 
   tb-rbac-backend:
-    image: cybersio/tb-rbac-backend:${VERSION}
+    image: cybersio/tb-rbac-backend:4.1.2
     build:
       context: .
     environment:
       PORT: 9006
       NODE_ENV: development
       CONFIG_PATH: config.env
-      DB_HOST: ${RBAC_DB_HOST}
-      DB_PORT: ${RBAC_DB_PORT}
-      DB_NAME: ${RBAC_DB_NAME}
-      DB_USER: ${RBAC_DB_USER}
-      DB_PASSWORD: ${RBAC_DB_PASSWORD}
+      DB_HOST: 192.168.0.154
+      DB_PORT: 5432
+      DB_NAME: rbacdb
+      DB_USER: rbacdb
+      DB_PASSWORD: rbacdb
       DB_DIALECT: postgres
       JWT_SECRET: supersecretkey
       JWT_ALGORITHM: HS256
-      MAIN_BACKEND_URL: ${RBAC_MAIN_BACKEND_URL}
+      MAIN_BACKEND_URL: https://192.168.0.154:8086
       RATE_LIMIT_WINDOW_MS: 900000
       RATE_LIMIT_MAX_REQUESTS: 100
       LOG_LEVEL: info
       LOG_FILE: logs/auth-service.log
       CACHE_TTL: 300
       POLICY_CACHE_SIZE: 1000
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      ALLOWED_ORIGINS: http://localhost:*,http://localhost:3000,http://localhost:3002,http://192.168.0.19:8084,http://192.168.0.19:3002,https://192.168.0.26:9000,http://localhost:9000,https://192.168.0.81:9000
       HTTPS_CERT: /opt/certificate.pem
       HTTPS_KEY: /opt/key.pem
-      HOST_IP: ${CYB_MS_HOST_IP}
+      HOST_IP: 192.168.0.127
     network_mode: host
     restart: unless-stopped
