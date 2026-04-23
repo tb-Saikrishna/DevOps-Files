@@ -1,6 +1,6 @@
 services:
   root-config:
-    image: cybersio/root-config:4.1.2
+    image: cybersio/root-config:2.2.17
     build:
       context: ../root-config
     environment:
@@ -13,7 +13,7 @@ services:
       - ./logs/root-config:/var/log/nginx
 
   container-cybersio:
-    image: cybersio/root-container:4.1.2
+    image: cybersio/root-container:2.2.17
     build:
       context: ../root-container
     environment:
@@ -26,7 +26,7 @@ services:
       - ./logs/root-container:/var/log/nginx
 
   shared-lib:
-    image: cybersio/shared-lib:4.1.2
+    image: cybersio/shared-lib:2.2.17
     build:
       context: ../shared-lib
     environment:
@@ -39,7 +39,7 @@ services:
       - ./logs/shared-lib:/var/log/nginx
 
   tb-cybersio-ui:
-    image: cybersio/tb-cybersio-ui:4.1.2
+    image: cybersio/tb-cybersio-ui:2.2.17
     build:
       context: ../tb-cybersio-ui
     environment:
@@ -52,7 +52,7 @@ services:
       - ./logs/tb-cybersio-ui:/var/log/nginx
 
   tb-thirdparty-ui:
-    image: cybersio/tb-thirdparty-ui:4.1.2
+    image: cybersio/tb-thirdparty-ui:2.2.17
     build:
       context: ../tb-thirdParty-ui
     environment:
@@ -65,7 +65,7 @@ services:
       - ./logs/tb-thirdparty-ui:/var/log/nginx
 
   tb-rbac:
-    image: cybersio/tb-rbac:4.1.2
+    image: cybersio/tb-rbac:2.2.17
     build:
       context: ../tb-rbac
     environment:
@@ -78,7 +78,7 @@ services:
       - ./logs/tb-rbac:/var/log/nginx
  
   dist-api-gateway:
-    image: cybersio/dist-api-gateway:4.1.2
+    image: cybersio/dist-api-gateway:2.2.17
     build:
       context: .
     environment:
@@ -154,12 +154,12 @@ services:
       TBITSM_SERVICE_ID: 1
       TBITSM_SERVICESUBCATEGORY_ID: 2
       TBITSM_FUNCTIONALCI_ID: ADC
-      CYBERSIO_VERSION: v4.1.2
+      CYBERSIO_VERSION: v2.2.17
     network_mode: host
     restart: unless-stopped
 
   tb-rbac-backend:
-    image: cybersio/tb-rbac-backend:4.1.2
+    image: cybersio/tb-rbac-backend:2.2.17
     build:
       context: .
     environment:
