@@ -1,5 +1,5 @@
-def buildNodeService(serviceName) {
-    dir(serviceName) {
+def buildFrontendService(serviceName) {
+    dir("frontend/${serviceName}") {
         sh '''
             set -e
 
@@ -16,148 +16,338 @@ def buildNodeService(serviceName) {
     }
 }
 
+def buildBackendService(serviceName, useExtraPackages = false) {
+    dir("backend/${serviceName}") {
+        sh """
+            set -e
+            npm ci --legacy-peer-deps --no-audit --no-fund
+            
+            ${useExtraPackages ? '''
+            npm install copy-webpack-plugin
+            npm install webpack-node-externals
+            npm install babel-loader @babel/core @babel/preset-env --save-dev
+            ''' : ''}
+            
+            npm run build
+        """
+    }
+}
+
 pipeline {
     agent { label 'agent-127' }
-
+    
     options {
         skipDefaultCheckout(true)
+        timestamps()
+        timeout(time: 2, unit: 'HOURS')
     }
-
+    
     parameters {
         string(
             name: 'VERSION',
-            defaultValue: '1.0.0',
-            description: 'Enter release version'
+            defaultValue: '2.2.17',
+            description: 'Enter release version (matches docker-compose version)'
+        )
+        
+        string(
+            name: 'CYB_MF_HOST_IP',
+            defaultValue: '192.168.0.127',
+            description: 'Frontend Host IP'
         )
     }
-
+    
     environment {
-        CYB_MF_HOST_IP = '192.168.0.127'
+        // Frontend
+        FRONTEND_WORKSPACE = "/home/jenkins/workspace/tb-CyberSIO/Frontend"
+        FRONTEND_SERVICES = "shared-lib,root-config,root-container,tb-cybersio-ui,tb-thirdParty-ui,tb-rbac"
+        
+        // Backend
+        BACKEND_ARTIFACT_ROOT = "/opt/Artifact-Generation"
+        BACKEND_SERVICES = "dist-api-gateway,tb-rbac-backend"
+        
+        // Combined
         VERSION = "${params.VERSION}"
+        CYB_MF_HOST_IP = "${params.CYB_MF_HOST_IP}"
     }
-
+    
     stages {
-
-        stage('Checkout') {
-            tools { nodejs 'NodeJS_24.5.0' }
-            steps {
-                checkout scm
-                echo "Building branch: ${env.BRANCH_NAME}"
-                echo "Target Host: ${env.CYB_MF_HOST_IP}"
-            }
-        }
-
-        stage('Build Services') {
+        stage('Checkout All Repositories') {
             tools { nodejs 'NodeJS_24.5.0' }
             steps {
                 script {
-                    // Base services list
-                    def baseServices = ["shared-lib","root-config","root-container","tb-cybersio-ui","tb-thirdParty-ui","tb-rbac"]
-
-                    // build shared-lib first
-                    buildNodeService('shared-lib')
-
-                    // then build the rest in parallel
-                    def parallelBuilds = [:]
-                    for (svc in baseServices - ["shared-lib"]) {
-                        def service = svc
-                        parallelBuilds[service] = { buildNodeService(service) }
+                    // Checkout frontend
+                    dir('frontend') {
+                        checkout scm
+                        echo "Building frontend branch: ${env.BRANCH_NAME}"
                     }
+                    
+                    // Checkout backend services
+                    dir('backend/dist-api-gateway') {
+                        checkout scm
+                    }
+                    
+                    dir('backend/tb-rbac-backend') {
+                        checkout scm
+                    }
+                }
+            }
+        }
+        
+        stage('Load Backend Environment Variables') {
+            steps {
+                withCredentials([file(credentialsId: 'cybersio-env', variable: 'ENV_FILE')]) {
+                    sh '''
+                        echo "Loading backend environment variables..."
+                        mkdir -p backend
+                        cp $ENV_FILE backend/.env
+                        echo "Variables detected:"
+                        grep -v '^#' backend/.env | cut -d '=' -f1 | head -20
+                    '''
+                }
+            }
+        }
+        
+        stage('Build All Services') {
+            tools { nodejs 'NodeJS_24.5.0' }
+            steps {
+                script {
+                    // First build shared-lib (dependency for other frontend services)
+                    echo "Building shared-lib first..."
+                    buildFrontendService('shared-lib')
+                    
+                    // Build remaining frontend services in parallel
+                    def otherFrontendServices = ["root-config","root-container","tb-cybersio-ui","tb-thirdParty-ui","tb-rbac"]
+                    def parallelBuilds = [:]
+                    
+                    for (svc in otherFrontendServices) {
+                        def service = svc
+                        parallelBuilds[service] = { buildFrontendService(service) }
+                    }
+                    
+                    // Add backend services to parallel builds
+                    parallelBuilds['dist-api-gateway'] = { buildBackendService('dist-api-gateway', false) }
+                    parallelBuilds['tb-rbac-backend'] = { buildBackendService('tb-rbac-backend', true) }
+                    
+                    echo "Building all remaining services in parallel..."
                     parallel parallelBuilds
                 }
             }
         }
-
-        stage('Artifact Generation') {
+        
+        stage('Prepare Artifacts & Certificates') {
             steps {
                 script {
-                    def versionFolder = "/home/jenkins/workspace/tb-CyberSIO/Frontend"
-                    def services = ["shared-lib","root-config","root-container","tb-cybersio-ui","tb-thirdParty-ui","tb-rbac"]
-
+                    def frontendServicesList = ["shared-lib","root-config","root-container","tb-cybersio-ui","tb-thirdParty-ui","tb-rbac"]
+                    
+                    // Frontend artifacts
                     sh """
-                        # Force delete using docker (handles root-owned files)
-                        if [ -d "${versionFolder}" ]; then
-                            echo "Force deleting ${versionFolder} using docker..."
-                            docker run --rm -v ${versionFolder}:/data alpine sh -c "rm -rf /data/*"
+                        set -e
+                        
+                        # Force clean frontend directory using docker (handles root-owned files)
+                        if [ -d "${env.FRONTEND_WORKSPACE}" ]; then
+                            echo "Force deleting ${env.FRONTEND_WORKSPACE} using docker..."
+                            docker run --rm -v ${env.FRONTEND_WORKSPACE}:/data alpine sh -c "rm -rf /data/*"
                         fi
-                    
-                        rm -rf ${versionFolder}
-                        mkdir -p ${versionFolder}
-                    
-                        echo "Copying artifacts..."
-                        for svc in ${services.join(" ")}; do
+                        
+                        rm -rf ${env.FRONTEND_WORKSPACE}
+                        mkdir -p ${env.FRONTEND_WORKSPACE}
+                        
+                        # Copy frontend artifacts from workspace
+                        cd frontend
+                        for svc in ${frontendServicesList.join(" ")}; do
                             if [ -d "\$svc/dist" ]; then
-                                mkdir -p ${versionFolder}/\$svc
-                                cp -r \$svc/dist ${versionFolder}/\$svc/
-                                cp \$svc/Dockerfile ${versionFolder}/\$svc/ 2>/dev/null || true
-                                cp \$svc/*.sh ${versionFolder}/\$svc/ 2>/dev/null || true
+                                mkdir -p ${env.FRONTEND_WORKSPACE}/\$svc
+                                cp -r \$svc/dist ${env.FRONTEND_WORKSPACE}/\$svc/
+                                cp \$svc/Dockerfile ${env.FRONTEND_WORKSPACE}/\$svc/ 2>/dev/null || true
+                                cp \$svc/*.sh ${env.FRONTEND_WORKSPACE}/\$svc/ 2>/dev/null || true
                             else
                                 echo "ERROR: \$svc/dist not found!"
                                 exit 1
                             fi
                         done
-                    
-                        echo "Extracting root-config JSON files..."
+                        
+                        # Copy root-config JSON files
                         for file in microfrontends.json config.json; do
                             if [ -f "root-config/dist/\$file" ]; then
-                                cp root-config/dist/\$file ${versionFolder}/
+                                cp root-config/dist/\$file ${env.FRONTEND_WORKSPACE}/
                             fi
                         done
-                    """
-                }
-            }
-        }
-
-        stage('Certificates Generation') {
-            steps {
-                script {
-                    def versionFolder = "/home/jenkins/workspace/tb-CyberSIO/Frontend"
-                    def services = ["shared-lib","root-config","root-container","tb-cybersio-ui","tb-thirdParty-ui","tb-rbac"]
-
-                    sh """
-                        generate_cert() {
-                            service=\$1
-                            dir=${versionFolder}/\$service
-
-                            if [ -d "\$dir" ]; then
-                                cd \$dir
+                        
+                        # Generate SSL certificates for each frontend service
+                        cd ${env.FRONTEND_WORKSPACE}
+                        for svc in ${frontendServicesList.join(" ")}; do
+                            if [ -d "\$svc" ]; then
+                                cd \$svc
                                 if [ ! -f certificate.pem ] || [ ! -f key.pem ]; then
-                                    echo "Generating certificate for \$service"
-
-                                    openssl req -x509 -nodes -days 365 \
-                                    -newkey rsa:2048 \
-                                    -keyout key.pem \
-                                    -out certificate.pem \
+                                    echo "Generating certificate for \$svc"
+                                    openssl req -x509 -nodes -days 365 \\
+                                    -newkey rsa:2048 \\
+                                    -keyout key.pem \\
+                                    -out certificate.pem \\
                                     -subj "/C=IN/ST=TN/L=Chennai/O=Cybersio/OU=DevOps/CN=localhost"
                                 fi
+                                cd ..
                             fi
-                        }
-
-                        for svc in ${services.join(" ")}; do
-                            generate_cert \$svc
                         done
+                        
+                        echo "Frontend artifacts prepared successfully"
+                    """
+                    
+                    // Backend artifacts
+                    def backendConfigs = [
+                        [name: 'dist-api-gateway', pipeline: 'cybersio-microservice-dist-api'],
+                        [name: 'tb-rbac-backend', pipeline: 'cybersio-microservice-rbac']
+                    ]
+                    
+                    for (backend in backendConfigs) {
+                        def service = backend.name
+                        def pipelineName = backend.pipeline
+                        def versionFolder = "${env.BACKEND_ARTIFACT_ROOT}/${pipelineName}-${params.VERSION}"
+                        
+                        sh """
+                            set -e
+                            
+                            # Create artifact directory
+                            echo "Preparing artifacts for ${service}..."
+                            rm -rf ${versionFolder}
+                            mkdir -p ${versionFolder}
+                            
+                            # Copy artifacts from workspace
+                            cp -r backend/${service}/dist ${versionFolder}/
+                            cp backend/${service}/Dockerfile ${versionFolder}/ 2>/dev/null || true
+                            
+                            # Copy docker-compose if exists
+                            if [ -f "backend/${service}/docker-compose.yaml" ]; then
+                                cp backend/${service}/docker-compose.yaml ${versionFolder}/
+                            fi
+                            
+                            # Copy environment file
+                            cp backend/.env ${versionFolder}/.env
+                            
+                            # Validate artifacts
+                            if [ ! -d "${versionFolder}/dist" ]; then
+                                echo "ERROR: dist not found for ${service}!"
+                                exit 1
+                            fi
+                            
+                            # Generate SSL certificates for backend
+                            cd ${versionFolder}
+                            if [ ! -f certificate.pem ] || [ ! -f key.pem ]; then
+                                echo "Generating certificate for ${service}"
+                                openssl req -x509 -nodes -days 365 \\
+                                -newkey rsa:2048 \\
+                                -keyout key.pem \\
+                                -out certificate.pem \\
+                                -subj "/C=IN/ST=TN/L=Chennai/O=Cybersio/OU=DevOps/CN=localhost"
+                            fi
+                            
+                            echo "${service} artifacts prepared successfully at ${versionFolder}"
+                        """
+                    }
+                }
+            }
+        }
+        
+        stage('Docker Build All Services') {
+            steps {
+                script {
+                    // Copy combined docker-compose.yaml to workspace
+                    sh """
+                        # Check if docker-compose.yaml exists in current directory
+                        if [ -f "docker-compose.yaml" ]; then
+                            cp docker-compose.yaml ${env.FRONTEND_WORKSPACE}/docker-compose.yaml
+                            echo "Combined docker-compose.yaml copied to frontend workspace"
+                        else
+                            echo "ERROR: docker-compose.yaml not found!"
+                            echo "Please ensure docker-compose.yaml is in the workspace root"
+                            exit 1
+                        fi
+                    """
+                    
+                    // Build all containers using combined compose file
+                    sh """
+                        cd ${env.FRONTEND_WORKSPACE}
+                        echo "========================================="
+                        echo "Building all Docker images"
+                        echo "========================================="
+                        echo "Version: ${params.VERSION}"
+                        echo "Host IP: ${env.CYB_MF_HOST_IP}"
+                        echo "Working directory: \$(pwd)"
+                        echo ""
+                        echo "Docker images to be built:"
+                        echo "  - shared-lib:${params.VERSION}"
+                        echo "  - root-config:${params.VERSION}"
+                        echo "  - root-container:${params.VERSION}"
+                        echo "  - tb-cybersio-ui:${params.VERSION}"
+                        echo "  - tb-thirdparty-ui:${params.VERSION}"
+                        echo "  - tb-rbac:${params.VERSION}"
+                        echo "  - dist-api-gateway:${params.VERSION}"
+                        echo "  - tb-rbac-backend:${params.VERSION}"
+                        echo ""
+                        
+                        DOCKER_BUILDKIT=0 CYB_MF_HOST_IP=${env.CYB_MF_HOST_IP} VERSION=${params.VERSION} \\
+                        docker compose -f docker-compose.yaml build --parallel
+                        
+                        echo ""
+                        echo "========================================="
+                        echo "Docker images built successfully"
+                        echo "========================================="
+                        docker images | grep "cybersio" | grep "${params.VERSION}"
                     """
                 }
             }
         }
-
-        stage('Docker Build') {
+        
+        stage('Deployment Ready') {
             steps {
-                script {
-                    def versionFolder = "/home/jenkins/workspace/tb-CyberSIO/Frontend"
-
-                    sh """
-                        cd ${versionFolder}
-                        echo "Building Docker images..."
-                        DOCKER_BUILDKIT=0 CYB_MF_HOST_IP=${env.CYB_MF_HOST_IP} VERSION=${params.VERSION} \
-                        docker compose -f docker-compose-files/docker-compose-base.yaml build
-                    """
-                }
+                echo """
+                    ========================================
+                    BUILD COMPLETED SUCCESSFULLY
+                    ========================================
+                    Version: ${params.VERSION}
+                    Host: 192.168.0.127 (agent-127)
+                    
+                    Frontend Artifacts: ${env.FRONTEND_WORKSPACE}
+                    Backend Artifacts: ${env.BACKEND_ARTIFACT_ROOT}
+                    
+                    Services Built:
+                    ✓ shared-lib:${params.VERSION}
+                    ✓ root-config:${params.VERSION}
+                    ✓ root-container:${params.VERSION}
+                    ✓ tb-cybersio-ui:${params.VERSION}
+                    ✓ tb-thirdParty-ui:${params.VERSION}
+                    ✓ tb-rbac:${params.VERSION}
+                    ✓ dist-api-gateway:${params.VERSION}
+                    ✓ tb-rbac-backend:${params.VERSION}
+                    
+                    To deploy:
+                    cd ${env.FRONTEND_WORKSPACE}
+                    docker compose -f docker-compose.yaml up -d
+                    
+                    To check status:
+                    docker compose -f docker-compose.yaml ps
+                    
+                    To view logs:
+                    docker compose -f docker-compose.yaml logs -f
+                    ========================================
+                """
             }
         }
     }
-
+    
     post {
+        success {
+            echo """
+                🎉 SUCCESS: Pipeline completed for version ${params.VERSION}
+                📍 All services built on agent-127 (192.168.0.127)
+            """
+        }
+        failure {
+            echo """
+                ❌ FAILURE: Pipeline failed for version ${params.VERSION}
+                Please check the logs above for details.
+            """
+        }
         always {
             cleanWs()
         }
