@@ -62,7 +62,7 @@ pipeline {
         FRONTEND_SERVICES = "shared-lib,root-config,root-container,tb-cybersio-ui,tb-thirdParty-ui,tb-rbac"
         
         // Backend
-        BACKEND_ARTIFACT_ROOT = "/opt/Artifact-Generation"
+        BACKEND_WORKSPACE = "/home/jenkins/workspace/tb-CyberSIO/Backend"
         BACKEND_SERVICES = "dist-api-gateway,tb-rbac-backend"
         
         // Combined
@@ -202,7 +202,7 @@ pipeline {
                     for (backend in backendConfigs) {
                         def service = backend.name
                         def pipelineName = backend.pipeline
-                        def versionFolder = "${env.BACKEND_ARTIFACT_ROOT}/${pipelineName}-${params.VERSION}"
+                        def versionFolder = "${env.BACKEND_WORKSPACE}/${pipelineName}-${params.VERSION}"
                         
                         sh """
                             set -e
@@ -308,7 +308,7 @@ pipeline {
                     Host: 192.168.0.127 (agent-127)
                     
                     Frontend Artifacts: ${env.FRONTEND_WORKSPACE}
-                    Backend Artifacts: ${env.BACKEND_ARTIFACT_ROOT}
+                    Backend Artifacts: ${env.BACKEND_WORKSPACE}
                     
                     Services Built:
                     ✓ shared-lib:${params.VERSION}
