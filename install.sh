@@ -311,13 +311,24 @@ run_certificate_if_requested() {
 # DB SCRIPT
 # =========================================================
 
-run_db_if_requested() {
-    local db_script="$CURRENT_DIR/db.sh"
-    if ask_yes_no "Do you want to run db.sh"; then
-        [[ -f "$db_script" ]] || { echo "db.sh not found"; exit 1; }
-        chmod +x "$db_script"
-        bash "$db_script"
+collect_db_hosts() {
+  local db_count db_ip db_array=""
+  read -r -p "How many PostgreSQL DB IPs are there: " db_count
+  if ! [[ "$db_count" =~ ^[0-9]+$ ]] || [[ "$db_count" -lt 1 ]]; then
+    echo "Error: DB count must be >= 1"
+    exit 1
+  fi
+
+  for ((i=1; i<=db_count; i++)); do
+    read -r -p "PostgreSQL DB IP #$i: " db_ip
+    if [[ $i -eq 1 ]]; then
+      db_array="\"$db_ip\""
+    else
+      db_array="$db_array,\"$db_ip\""
     fi
+  done
+
+  DB_HOST_ARRAY="[$db_array]"
 }
 
 # =========================================================
@@ -374,7 +385,7 @@ main() {
         load_images_from_directory
     fi
     run_certificate_if_requested
-    run_db_if_requested
+    collect_db_hosts
     replace_compose_values
     run_docker
     echo ""
