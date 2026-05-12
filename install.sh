@@ -50,16 +50,19 @@ ask_yes_no() {
 }
 
 upsert_host_entry() {
-    local ip="$1"
-    local host="$2"
-    local tmp_file
-    tmp_file="$(mktemp)"
-    awk -v h="$host" '$2 == h {next} {print}' /etc/hosts > "$tmp_file"
-    printf "%s %s\n" "$ip" "$host" >> "$tmp_file"
-    cat "$tmp_file" > /etc/hosts
-    rm -f "$tmp_file"
-}
+  local ip="$1"
+  local host="$2"
+  local tmp_file
+  tmp_file="$(mktemp)"
 
+  awk -v h="$host" '
+    $2 == h {next}
+    {print}
+  ' /etc/hosts > "$tmp_file"
+  printf "%s %s\n" "$ip" "$host" >> "$tmp_file"
+  cat "$tmp_file" > /etc/hosts
+  rm -f "$tmp_file"
+}
 
 # =========================================================
 # DOCKER INSTALL
