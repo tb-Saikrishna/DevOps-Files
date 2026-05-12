@@ -96,7 +96,7 @@ services:
       DB_IDLE_TIMEOUT: 30000
       DB_CONNECTION_TIMEOUT: 10000
       DB_ACQUIRE_TIMEOUT: 30000
-      API_GATEWAY_BASE_URL: https://tbcybersio.tech-bridge.biz:9007
+      API_GATEWAY_BASE_URL: https://cybersio.tech-bridge.biz:9007
       SOAR_FILTERS: ""
       SOAR_BASE_URL: https://tbsoar.tech-bridge.biz:5001
       SOAR_API_KEY: 9a8d7a9d7a9d
