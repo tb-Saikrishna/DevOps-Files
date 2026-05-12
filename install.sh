@@ -365,9 +365,10 @@ run_docker() {
 
 main() {
     check_root_user
+    install_docker_packages
     install_docker_if_requested
     if ask_yes_no "Do you want to load Docker images"; then
-        load_images
+        load_images_from_directory
     fi
     run_certificate_if_requested
     run_db_if_requested
