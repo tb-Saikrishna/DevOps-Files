@@ -34,8 +34,8 @@ services:
       PGDATABASE: cybersio
       PGPASSWORD: 1234
       PGPORT: 5432
-      SSL_KEY_PATH: /root/tbsiem-microservices/tbsiem-microservice/ssl/server.key
-      SSL_CERT_PATH: /root/tbsiem-microservices/tbsiem-microservice/ssl/server.crt
+      SSL_KEY_PATH: /root/Backend/tbsiem-backend/ssl/server.key
+      SSL_CERT_PATH: /root/Backend/tbsiem-backend/ssl/server.crt
       DOWNLOADS_DIR: /root/downloadsing/reports
       SMTP_LOCAL_SERVER: false
       SMTP_SERVICE: smtp.office365.com
@@ -54,7 +54,7 @@ services:
       - ./certs/key.pem:/opt/key.pem
       - /etc/hosts:/etc/hosts:ro
       - ./scripts/backend-entrypoint.sh:/entrypoint.sh:ro
-      - ssl-backend-data:/root/tbsiem-microservices/tbsiem-microservice/ssl
+      - ssl-backend-data:/root/Backend/tbsiem-backend/ssl
 
   tbsiem-tool:
     image: tbsiem-tool
@@ -79,8 +79,8 @@ services:
       TBSIEM_CLIENT_PASSWORD: wazuh-wui
       TBSIEM_CLIENT_API_URLS: https://192.168.0.185:55000
       WAZUH_VULNERABILITIES: wazuh-states-vulnerabilities-*
-      SSL_KEY_PATH: /root/tbsiem-microservices/tbsiem-tool/ssl/server.key
-      SSL_CERT_PATH: /root/tbsiem-microservices/tbsiem-tool/ssl/server.crt
+      SSL_KEY_PATH: /root/Tool/tbsiem-tool/ssl/server.key
+      SSL_CERT_PATH: /root/Tool/tbsiem-tool/ssl/server.crt
       VISUALIZATION_INDEX: visualizations
       DASHBOARD_INDEX: dashboards
       CUSTOM_DASHBOARD_INDICES: '["tbsiem-alerts-*"]'
@@ -117,7 +117,7 @@ services:
       - ./certs/key.pem:/opt/key.pem
       - /etc/hosts:/etc/hosts:ro
       - ./scripts/tool-entrypoint.sh:/entrypoint.sh:ro
-      - ssl-tool-data:/root/tbsiem-microservices/tbsiem-tool/ssl
+      - ssl-tool-data:/root/Tool/tbsiem-tool/ssl
 
   kafka:
     image: apache/kafka:3.9.1
