@@ -17,6 +17,17 @@ echo "          tb-SIEM OFFLINE INSTALLER"
 echo "=================================================="
 
 # =========================================================
+# ROOT CHECK
+# =========================================================
+
+check_root_user() {
+  if [[ "$EUID" -ne 0 ]]; then
+    echo "Error: Run this script as root."
+    exit 1
+  fi
+}
+
+# =========================================================
 # HELPERS
 # =========================================================
 
@@ -26,16 +37,16 @@ is_ip_address() {
 }
 
 ask_yes_no() {
-    local prompt="$1"
-    local answer
-    while true; do
-        read -r -p "$prompt (y/n): " answer
-        case "${answer,,}" in
-            y|yes) return 0 ;;
-            n|no) return 1 ;;
-            *) echo "Please enter y or n." ;;
-        esac
-    done
+  local prompt="$1"
+  local answer
+  while true; do
+    read -r -p "$prompt (y/n): " answer
+    case "${answer,,}" in
+      y|yes) return 0 ;;
+      n|no) return 1 ;;
+      *) echo "Please enter y or n." ;;
+    esac
+  done
 }
 
 upsert_host_entry() {
@@ -49,73 +60,95 @@ upsert_host_entry() {
     rm -f "$tmp_file"
 }
 
-# =========================================================
-# ROOT CHECK
-# =========================================================
-
-check_root_user() {
-    if [[ "$EUID" -ne 0 ]]; then
-        echo "Please run as root"
-        exit 1
-    fi
-}
 
 # =========================================================
 # DOCKER INSTALL
 # =========================================================
 
-install_pkg_dir() {
-    local dir="$1"
-    local pkg deb
-    for pkg in docker-ce-cli docker-ce containerd.io docker-buildx-plugin docker-compose-plugin; do
-        for deb in "$dir/$pkg"/*.deb; do
-            [[ -e "$deb" ]] || continue
-            dpkg -i "$deb"
-        done
+install_docker_packages() {
+  local dep_dir="$1"
+  local packages=("docker-ce-cli" "docker-ce" "containerd.io" "docker-buildx-plugin" "docker-compose-plugin")
+  local package package_dir deb_file
+
+  for package in "${packages[@]}"; do
+    package_dir="$dep_dir/$package"
+    if [[ ! -d "$package_dir" ]]; then
+      echo "Error: Missing package directory $package_dir"
+      exit 1
+    fi
+    for deb_file in "$package_dir"/*.deb; do
+      [[ -e "$deb_file" ]] || continue
+      echo "Installing $(basename "$deb_file")"
+      dpkg -i "$deb_file"
     done
+  done
 }
 
 install_docker_if_requested() {
-    if command -v docker &>/dev/null; then
-        echo "Docker already installed"
-        return
+  if ask_yes_no "Do you want to install Docker from offline packages"; then
+    if [[ -f /etc/os-release ]]; then
+      # shellcheck disable=SC1091
+      . /etc/os-release
+      if [[ "$ID" == "ubuntu" && "$VERSION_ID" == "22.04" ]]; then
+        install_docker_packages "$DOCKER_DEP_DIR_22"
+      elif [[ "$ID" == "ubuntu" && "$VERSION_ID" == "24.04" ]]; then
+        install_docker_packages "$DOCKER_DEP_DIR_24"
+      else
+        echo "Error: Only Ubuntu 22.04 and 24.04 are supported for offline Docker install."
+        exit 1
+      fi
+    else
+      echo "Error: /etc/os-release not found."
+      exit 1
     fi
-    if ask_yes_no "Do you want to install Docker from offline packages"; then
-        . /etc/os-release
-        case "$VERSION_ID" in
-            "22.04") install_pkg_dir "$DOCKER_DEP_DIR_22" ;;
-            "24.04") install_pkg_dir "$DOCKER_DEP_DIR_24" ;;
-            *) echo "Unsupported Ubuntu version"; exit 1 ;;
-        esac
-        systemctl start docker
-        systemctl enable docker
-    fi
+    systemctl enable docker
+    systemctl start docker
+  fi
 }
 
 # =========================================================
 # LOAD IMAGES
 # =========================================================
+load_images_from_directory() {
+  local loaded_any="false"
+  local image_file
+  local extract_dir
+  local extracted_tar
 
-load_images() {
-    local image_file extract_dir extracted_tar
-    if [[ -d "$IMAGE_DIR" ]]; then
-        for image_file in "$IMAGE_DIR"/*.tar "$IMAGE_DIR"/*.tar.gz; do
-            [[ -e "$image_file" ]] || continue
-            echo "Loading image: $image_file"
-            if [[ "$image_file" == *.tar.gz ]]; then
-                extract_dir="$(mktemp -d)"
-                tar -xzf "$image_file" -C "$extract_dir"
-                for extracted_tar in "$extract_dir"/*.tar; do
-                    [[ -e "$extracted_tar" ]] || continue
-                    docker load -i "$extracted_tar"
-                done
-                rm -rf "$extract_dir"
-            else
-                docker load -i "$image_file"
-            fi
+  echo "Loading images from: $IMAGE_DIR"
+  if [[ -d "$IMAGE_DIR" ]]; then
+    for image_file in "$IMAGE_DIR"/*.tar "$IMAGE_DIR"/*.tar.gz; do
+      [[ -e "$image_file" ]] || continue
+
+      if [[ "$image_file" == *.tar.gz ]]; then
+        extract_dir="$(mktemp -d)"
+        echo "Extracting archive: $image_file"
+        tar -xzf "$image_file" -C "$extract_dir"
+
+        for extracted_tar in "$extract_dir"/*.tar; do
+          [[ -e "$extracted_tar" ]] || continue
+          echo "Loading extracted image: $extracted_tar"
+          docker load -i "$extracted_tar"
+          loaded_any="true"
         done
+
+        rm -rf "$extract_dir"
+      else
+        echo "Loading image file: $image_file"
+        docker load -i "$image_file"
+        loaded_any="true"
+      fi
+    done
+  fi
+
+  if [[ "$loaded_any" == "false" ]]; then
+    echo "No image archive found in image directory. Trying fallback tar in project root."
+    if [[ -f "$CURRENT_DIR/my-node-base_24.5.0.tar" ]]; then
+      docker load -i "$CURRENT_DIR/my-node-base_24.5.0.tar"
     fi
+  fi
 }
+
 
 # =========================================================
 # HOSTNAMES
