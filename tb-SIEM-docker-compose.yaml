@@ -6,7 +6,7 @@ services:
     environment:
       - PORT=8001
       - NODE_ENV=production
-      - HOST_IP=192.168.0.137
+      - HOST_IP=tbsiem.tech-bridge.biz
     network_mode: host
     restart: unless-stopped
     volumes:
@@ -26,9 +26,9 @@ services:
     environment:
       NODE_ENV: development
       PORT: 5001
-      TBSIEM_BASE_URL: https://192.168.0.20:8003
+      TBSIEM_BASE_URL: https://tbsiem.tech-bridge.biz:8003
       INTERNAL_TOKEN: f3d9b2a4c7e84f1d9a6c2b5e1f3a7d9c4e8b2f1a6c7d3e9b1a4f6c2d8e1b3a7
-      PEERS: https://192.168.0.20:8002,https://192.168.0.32:8002
+      PEERS: https://tbsiem1.tech-bridge.biz:8002,https://tbsiem2.tech-bridge.biz:8002
       PGHOST: '["192.168.0.180","192.168.0.32"]'
       PGUSER: tbsiem_user
       PGDATABASE: cybersio
@@ -70,7 +70,7 @@ services:
       SSL_PORT: 8003
       NODE_ENV: development
       JWT_SECRET: tbSecretKey123
-      SERVER_IP: '["https://192.168.0.185:9200"]'
+      SERVER_IP: '["https://opensearch.tech-bridge.biz:9200"]'
       OPENSEARCH_INDEX_NAME: '*-alerts-*'
       OPENSEARCH_INDEX_PATTERN: 'wazuh-alerts-'
       OPENSEARCH_USERNAME: admin
@@ -96,9 +96,9 @@ services:
       DB_IDLE_TIMEOUT: 30000
       DB_CONNECTION_TIMEOUT: 10000
       DB_ACQUIRE_TIMEOUT: 30000
-      API_GATEWAY_BASE_URL: https://192.168.0.19:9007
+      API_GATEWAY_BASE_URL: https://tbcybersio.tech-bridge.biz:9007
       SOAR_FILTERS: ""
-      SOAR_BASE_URL: https://192.168.0.34:5001
+      SOAR_BASE_URL: https://tbsoar.tech-bridge.biz:5001
       SOAR_API_KEY: 9a8d7a9d7a9d
       SOAR_DATA_INTERVAL_IN_MINUT: 1
       PDF_PRIMARY_LOGO_PATH: /root/Tool/tbsiem-tool/pdfPrimaryLogo.png
