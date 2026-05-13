@@ -93,7 +93,27 @@ install_docker_if_requested() {
       # shellcheck disable=SC1091
       . /etc/os-release
       if [[ "$ID" == "ubuntu" && "$VERSION_ID" == "22.04" ]]; then
-        echo -e "\n============================================================\nERROR: Unsupported Operating System\n============================================================\nThis offline package installer is officially supported ONLY on:\n  -> Ubuntu 24.04 LTS\n\nDetected system is not supported.\nUbuntu 22.04 and other Ubuntu versions are incompatible.\n\nPlease provision a fresh Ubuntu 24.04 LTS server and retry.\n============================================================\n"
+        echo -e "\n\
+╔══════════════════════════════════════════════════════════════════════╗\n\
+║                    TB SIEM Platform Installer                      ║\n\
+╠══════════════════════════════════════════════════════════════════════╣\n\
+║  Environment Compatibility Validation                              ║\n\
+║                                                                      ║\n\
+║  This TB SIEM Platform Release has been fully Tested, Validated,    ║\n\
+║  and Optimized Exclusively for Ubuntu 24.04 LTS.                   ║\n\
+║                                                                      ║\n\
+║  Ubuntu 22.04 LTS and other Ubuntu releases are not part of the    ║\n\
+║  Certified Deployment Baseline for this Installer Package.          ║\n\
+║                                                                      ║\n\
+║  Continuing Installation on an Unsupported Operating System may     ║\n\
+║  result in Service Instability, Dependency Incompatibilities,       ║\n\
+║  or Unsupported Platform Behavior.                                     ║\n\
+║                                                                      ║\n\
+║  Required Operating System: Ubuntu 24.04 LTS                       ║\n\
+║                                                                      ║\n\
+║  Please provision a clean Ubuntu 24.04 LTS Environment before      ║\n\
+║  proceeding with the Installation.                                  ║\n\
+╚══════════════════════════════════════════════════════════════════════╝\n"
       elif [[ "$ID" == "ubuntu" && "$VERSION_ID" == "24.04" ]]; then
         install_docker_packages "$DOCKER_DEP_DIR_24"
       else
