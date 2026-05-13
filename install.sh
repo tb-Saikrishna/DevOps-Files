@@ -391,7 +391,6 @@ run_docker() {
 
 main() {
     check_root_user
-    install_docker_packages
     install_docker_if_requested
     if ask_yes_no "Do you want to load Docker images"; then
         load_images_from_directory
