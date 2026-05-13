@@ -443,11 +443,7 @@ replace_compose_values() {
 
     # Kafka Port
     sed -E -i "s|\"[0-9]+:9092\"|\"${KAFKA_PORT}:9092\"|g" "$DOCKER_COMPOSE_FILE"
-
-    # Kafka Advertised Listeners
-    sed -E -i \
-    "s|PLAINTEXT_HOST://localhost:[0-9]+|PLAINTEXT_HOST://localhost:${KAFKA_PORT}|g" \
-    "$DOCKER_COMPOSE_FILE"
+    
 }
 
 # =========================================================
