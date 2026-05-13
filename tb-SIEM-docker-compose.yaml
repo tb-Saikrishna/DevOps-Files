@@ -3,6 +3,7 @@ services:
     image: tb-siem-ui
     build:
       context: ./Frontend/tb-siem-ui
+    container_name: tbsiem-frontend
     environment:
       - PORT=8001
       - NODE_ENV=production
