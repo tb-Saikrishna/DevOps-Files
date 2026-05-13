@@ -106,10 +106,23 @@ install_docker_if_requested() {
 ║  Please use a clean Ubuntu 24.04 LTS system to             ║\n\
 ║  continue the Installation.                                ║\n\
 ╚════════════════════════════════════════════════════════════╝\n"
+        exit 1
       elif [[ "$ID" == "ubuntu" && "$VERSION_ID" == "24.04" ]]; then
         install_docker_packages "$DOCKER_DEP_DIR_24"
       else
-        echo "Error: Only Ubuntu 22.04 and 24.04 are supported for offline Docker install."
+        echo -e "\n\
+╔════════════════════════════════════════════════════════════╗\n\
+║                 TB SIEM Platform Installer                 ║\n\
+╠════════════════════════════════════════════════════════════╣\n\
+║  This installer is officially supported only on            ║\n\
+║  Ubuntu 24.04 LTS.                                         ║\n\
+║                                                            ║\n\
+║  Other Ubuntu versions are not part of the                 ║\n\
+║  Certified Deployment Environment.                         ║\n\
+║                                                            ║\n\
+║  Please use a clean Ubuntu 24.04 LTS system to             ║\n\
+║  continue the Installation.                                ║\n\
+╚════════════════════════════════════════════════════════════╝\n"
         exit 1
       fi
     else
