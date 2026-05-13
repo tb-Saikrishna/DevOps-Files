@@ -426,9 +426,12 @@ main() {
     replace_compose_values
     run_docker
     echo ""
-    echo "=================================================="
-    echo "          tb-SIEM INSTALLATION COMPLETED"
-    echo "=================================================="
+    echo "╔══════════════════════════════════════════════════════╗"
+    echo "║              TB SIEM Platform Installer              ║"
+    echo "╠══════════════════════════════════════════════════════╣"
+    echo "║              Installation Completed                  ║"
+    echo "╚══════════════════════════════════════════════════════╝"
+    echo ""
 }
 
 main "$@"
