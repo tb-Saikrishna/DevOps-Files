@@ -331,6 +331,18 @@ collect_db_hosts() {
   DB_HOST_ARRAY="[$db_array]"
 }
 
+run_db_if_requested() {
+  local db_script="$CURRENT_DIR/db.sh"
+  if ask_yes_no "Do you want to run db.sh"; then
+    if [[ -f "$db_script" ]]; then
+      chmod +x "$db_script"
+      bash "$db_script"
+    else
+      echo "Warning: db.sh not found, skipping."
+    fi
+  fi
+}
+
 # =========================================================
 # UPDATE COMPOSE FILE
 # =========================================================
@@ -386,6 +398,7 @@ main() {
     fi
     run_certificate_if_requested
     collect_db_hosts
+    run_db_if_requested
     replace_compose_values
     run_docker
     echo ""
