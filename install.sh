@@ -320,6 +320,42 @@ done
 DB_HOST_ARRAY="[$DB_ENTRIES]"
 
 # =========================================================
+# PORT CONFIGURATION
+# =========================================================
+
+echo ""
+echo "=================================================="
+echo "             PORT CONFIGURATION"
+echo "=================================================="
+
+read -r -p "Enter PostgreSQL host port [5432]: " POSTGRES_PORT
+POSTGRES_PORT="${POSTGRES_PORT:-5432}"
+
+while ! [[ "$POSTGRES_PORT" =~ ^[0-9]+$ ]]; do
+    echo "Invalid PostgreSQL port"
+    read -r -p "Enter PostgreSQL host port [5432]: " POSTGRES_PORT
+    POSTGRES_PORT="${POSTGRES_PORT:-5432}"
+done
+
+read -r -p "Enter Redis host port [6380]: " REDIS_PORT
+REDIS_PORT="${REDIS_PORT:-6380}"
+
+while ! [[ "$REDIS_PORT" =~ ^[0-9]+$ ]]; do
+    echo "Invalid Redis port"
+    read -r -p "Enter Redis host port [6380]: " REDIS_PORT
+    REDIS_PORT="${REDIS_PORT:-6380}"
+done
+
+read -r -p "Enter Kafka host port [9092]: " KAFKA_PORT
+KAFKA_PORT="${KAFKA_PORT:-9092}"
+
+while ! [[ "$KAFKA_PORT" =~ ^[0-9]+$ ]]; do
+    echo "Invalid Kafka port"
+    read -r -p "Enter Kafka host port [9092]: " KAFKA_PORT
+    KAFKA_PORT="${KAFKA_PORT:-9092}"
+done
+
+# =========================================================
 # CERTIFICATES
 # =========================================================
 
@@ -398,6 +434,20 @@ replace_compose_values() {
 
     # SOAR
     sed -E -i "s|SOAR_BASE_URL:.*|SOAR_BASE_URL: https://${HOSTNAMES[tbsoar]}:5001|g" "$DOCKER_COMPOSE_FILE"
+
+    # PostgreSQL Port
+    sed -E -i "s|\"[0-9]+:5432\"|\"${POSTGRES_PORT}:5432\"|g" "$DOCKER_COMPOSE_FILE"
+
+    # Redis Port
+    sed -E -i "s|\"[0-9]+:6380\"|\"${REDIS_PORT}:6380\"|g" "$DOCKER_COMPOSE_FILE"
+
+    # Kafka Port
+    sed -E -i "s|\"[0-9]+:9092\"|\"${KAFKA_PORT}:9092\"|g" "$DOCKER_COMPOSE_FILE"
+
+    # Kafka Advertised Listeners
+    sed -E -i \
+    "s|PLAINTEXT_HOST://localhost:[0-9]+|PLAINTEXT_HOST://localhost:${KAFKA_PORT}|g" \
+    "$DOCKER_COMPOSE_FILE"
 }
 
 # =========================================================
