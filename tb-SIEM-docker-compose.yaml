@@ -190,7 +190,7 @@ services:
     image: redis:7-alpine
     container_name: cybersio-redis
     ports:
-      - "6380:6380"
+      - "6380:6379"
     volumes:
       - ./Connector/tbsiem-connector/redis-data:/data
       - /etc/hosts:/etc/hosts:ro
