@@ -93,7 +93,7 @@ install_docker_if_requested() {
       # shellcheck disable=SC1091
       . /etc/os-release
       if [[ "$ID" == "ubuntu" && "$VERSION_ID" == "22.04" ]]; then
-        install_docker_packages "$DOCKER_DEP_DIR_22"
+        echo -e "\n============================================================\nERROR: Unsupported Operating System\n============================================================\nThis offline package installer is officially supported ONLY on:\n  -> Ubuntu 24.04 LTS\n\nDetected system is not supported.\nUbuntu 22.04 and other Ubuntu versions are incompatible.\n\nPlease provision a fresh Ubuntu 24.04 LTS server and retry.\n============================================================\n"
       elif [[ "$ID" == "ubuntu" && "$VERSION_ID" == "24.04" ]]; then
         install_docker_packages "$DOCKER_DEP_DIR_24"
       else
