@@ -7,7 +7,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=5000
-      - HOST_IP=192.168.0.51
+      - HOST_IP=tbsoar.tech-bridge.biz
     network_mode: host
     restart: unless-stopped
     volumes:
@@ -61,10 +61,10 @@ services:
       - SIEM_API_KEYS=9a8d7a9d7a9d,8a7d6c5b4a3b
 
       # Agent Summary
-      - AGENT_SUMMARY_BASE_URL=https://192.168.0.20:3001/v1/agent/summarylist
+      - AGENT_SUMMARY_BASE_URL=https://tbsiem.tech-bridge.biz:3001/v1/agent/summary/list
 
       # UEBA Configuration
-      - UEBA_IP_RISK_SCORE_URL=https://192.168.0.20:1443/tbueba/IPriskscores
+      - UEBA_IP_RISK_SCORE_URL=https://tbueba.tech-bridge.biz:1443/tbueba/IPriskscores
 
       # Correlation Configuration
       - CORRELATION_WINDOW_MINUTES=15
@@ -72,10 +72,10 @@ services:
       - CORRELATION_INCIDENT_BATCH_SIZE=500
 
       # Full URL to users email API
-      - TBSOAR_AUTH_USERS_URL=https://192.168.0.20:5002/api/auth/users
+      - TBSOAR_AUTH_USERS_URL=https://tbsoar.tech-bridge.biz:5002/api/auth/users
 
       # Ansible SSH defaults for playbooks
-      - ANSIBLE_TARGET_HOST=192.168.0.51
+      - ANSIBLE_TARGET_HOST=tbsoar.tech-bridge.biz
       - ANSIBLE_USER=root
       - ANSIBLE_SSH_PASS=Admin@123
 
