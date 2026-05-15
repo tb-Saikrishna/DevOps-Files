@@ -1,0 +1,88 @@
+services:
+  tb-soar-ui:
+    image: tb-soar-ui
+    build:
+      context: ./Frontend/tb-soar-ui
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - HOST_IP=192.168.0.51
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - ./logs/tb-soar-ui:/app/logs
+      - ./certs/certificate.pem:/opt/certificate.pem
+      - ./certs/key.pem:/opt/key.pem
+
+  tbsoar-backend:
+    image: tbsoar-backend
+    build:
+      context: ./Backend/tbsoar-backend
+    environment:
+      # Node Environment
+      - NODE_ENV=production
+
+      # Server Configuration
+      - PORT=5001
+
+      # Database Configuration
+      - PGHOST=192.168.0.51
+      - PGUSER=postgres
+      - PGPASSWORD=admin
+      - PGDATABASE=tbsoar
+      - PGPORT=5432
+
+      # SSL Configuration
+      - SSL_KEY_PATH=./ssl/server.key
+      - SSL_CERT_PATH=./ssl/server.crt
+
+      # SIEM Playbook Configuration
+      - SIEM_PLAYB00K_PATH=
+      - SIEM_PLAYB00K_NAME=
+
+      # TBSOAR Users
+      - TBSOAR_USERS_URL=
+
+      # Email Configuration
+      - SMTP_FROM=aradhya.katiyar@tech-bridge.biz
+      - SMTP_TO=Aradhya@44%
+      - SEND_EMAIL_TO=devendra.singh@tech-bridge.biz
+
+      # Playbook Configuration
+      - DEFAULT_PLAYB00KS=Block Malicious IP Playbook,Create ITSM Ticket Playbook,Disable Compromised User Account Playbook,Quarantine Host Playbook,Send Alert Notification Playbook
+      - PLAYBOOK_QUEUE_CONCURRENCY=10
+
+      # SOAR Configuration
+      - SOAR_VERSION=1.2.1
+
+      # SIEM API
+      - SIEM_API_KEYS=9a8d7a9d7a9d,8a7d6c5b4a3b
+
+      # Agent Summary
+      - AGENT_SUMMARY_BASE_URL=https://192.168.0.20:3001/v1/agent/summarylist
+
+      # UEBA Configuration
+      - UEBA_IP_RISK_SCORE_URL=https://192.168.0.20:1443/tbueba/IPriskscores
+
+      # Correlation Configuration
+      - CORRELATION_WINDOW_MINUTES=15
+      - CORRELATION_GROUP_PAGE_SIZE=100
+      - CORRELATION_INCIDENT_BATCH_SIZE=500
+
+      # Full URL to users email API
+      - TBSOAR_AUTH_USERS_URL=https://192.168.0.20:5002/api/auth/users
+
+      # Ansible SSH defaults for playbooks
+      - ANSIBLE_TARGET_HOST=192.168.0.51
+      - ANSIBLE_USER=root
+      - ANSIBLE_SSH_PASS=Admin@123
+
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - ./certs/certificate.pem:/opt/certificate.pem
+      - ./certs/key.pem:/opt/key.pem
+      # Mount SSL certificates directory
+      - ./ssl:/app/ssl:ro
+      # Mount the playbook file directory
+      - /root:/root:ro
