@@ -3,6 +3,7 @@ services:
     image: tb-soar-ui
     build:
       context: ./Frontend/tb-soar-ui
+    container_name: tbsoar-frontend
     environment:
       - NODE_ENV=production
       - PORT=5000
@@ -18,6 +19,7 @@ services:
     image: tbsoar-backend
     build:
       context: ./Backend/tbsoar-backend
+    container_name: tbsoar-backend
     environment:
       # Node Environment
       - NODE_ENV=production
@@ -82,7 +84,5 @@ services:
     volumes:
       - ./certs/certificate.pem:/opt/certificate.pem
       - ./certs/key.pem:/opt/key.pem
-      # Mount SSL certificates directory
       - ./ssl:/app/ssl:ro
-      # Mount the playbook file directory
       - /root:/root:ro
