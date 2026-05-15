@@ -44,7 +44,7 @@ services:
       - SIEM_PLAYB00K_NAME=
 
       # TBSOAR Users
-      - TBSOAR_USERS_URL=
+      - TBSOAR_USERS_URL=https://tbsoar.tech-bridge.biz:9002/api/auth/users
 
       # Email Configuration
       - SMTP_FROM=aradhya.katiyar@tech-bridge.biz
@@ -73,7 +73,8 @@ services:
       - CORRELATION_INCIDENT_BATCH_SIZE=500
 
       # Full URL to users email API
-      - TBSOAR_AUTH_USERS_URL=https://tbsoar.tech-bridge.biz:5002/api/auth/users
+      - TBSOAR_AUTH_USERS_URL=https://tbsoa  
+      r.tech-bridge.biz:9007/api/auth/users
 
       # Ansible SSH defaults for playbooks
       - ANSIBLE_TARGET_HOST=tbsoar.tech-bridge.biz
